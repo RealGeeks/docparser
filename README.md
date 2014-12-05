@@ -8,4 +8,4 @@ from it.
 
 Useful to parse automated email messages.
 
-To see documentation and examples run `godoc` locally.
+Read [documentation on godoc.org](http://godoc.org/github.com/RealGeeks/docparser)
