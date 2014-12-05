@@ -112,6 +112,13 @@ type PatternGroup struct {
 	// from the regex named groups and should return a cleaned
 	// version. Optional.
 	Clean func(f Fields) Fields
+
+	// Optional means that if the Regex doesn't match the content
+	// given to Search() no error will be returned, just an empty
+	// Fields
+	//
+	// This could simplify the regex
+	Optional bool
 }
 
 // Search for all named groups from Regex in content
@@ -123,7 +130,11 @@ type PatternGroup struct {
 func (pg *PatternGroup) Search(content string) (Fields, error) {
 	fields, ok := regexGroups(pg.Regex, content)
 	if !ok {
-		return Fields{}, &NoMatch{pg.Name, content}
+		if pg.Optional {
+			return Fields{}, nil
+		} else {
+			return Fields{}, &NoMatch{pg.Name, content}
+		}
 	}
 	if pg.Clean != nil {
 		fields = pg.Clean(fields)
