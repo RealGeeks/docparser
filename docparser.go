@@ -21,6 +21,11 @@ type Pattern interface {
 }
 
 // Fields is the return value of Pattern.Search()
+//
+// Values could be plain strings or a list of subfields ([]map[string]string)
+//
+// The functions GetString() and GetMapSlice() handle the type casting
+// and return primitive types
 type Fields map[string]interface{}
 
 // Update merges other fields into f
@@ -48,20 +53,28 @@ func (f *Fields) GetString(key string) (value string) {
 	return vs
 }
 
-// GetFieldsSlice returns a slice of Fields associaged with key
+// GetMapSlice return a slice of subfields associated with key
 //
 // Return empty slice if key is not present or if key
 // is present but the value is not a slice of Fields
-func (f *Fields) GetFieldsSlice(key string) []Fields {
+func (f *Fields) GetMapSlice(key string) []map[string]string {
 	v, ok := (*f)[key]
 	if !ok {
-		return []Fields{}
+		return []map[string]string{}
 	}
-	vs, ok := v.([]Fields)
+	vf, ok := v.([]Fields)
 	if !ok {
-		return []Fields{}
+		return []map[string]string{}
+	}
+	vs := make([]map[string]string, len(vf))
+	for i, item := range vf {
+		vs[i] = make(map[string]string)
+		for key, val := range item {
+			vs[i][key] = val.(string)
+		}
 	}
 	return vs
+
 }
 
 // NoMatch error returned when Pattern.Search() fails to match

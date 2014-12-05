@@ -88,11 +88,11 @@ func ExamplePatternList() {
 		panic(err)
 	}
 
-	languages := fields.GetFieldsSlice("languages")
+	languages := fields.GetMapSlice("languages")
 
 	fmt.Printf("List has %d items\n", len(languages))
 	for i, language := range languages {
-		fmt.Printf("%d: Language name = %q\n", i, language.GetString("name"))
+		fmt.Printf("%d: Language name = %q\n", i, language["name"])
 	}
 	// Output:
 	// List has 4 items
@@ -133,8 +133,8 @@ Properties:
 	fmt.Println(fields.GetString("name"))
 	fmt.Println(fields.GetString("phone"))
 
-	for _, property := range fields.GetFieldsSlice("properties") {
-		fmt.Printf("#%s: %s\n", property.GetString("mls"), property.GetString("address"))
+	for _, property := range fields.GetMapSlice("properties") {
+		fmt.Printf("#%s: %s\n", property["mls"], property["address"])
 	}
 
 	// Output:
