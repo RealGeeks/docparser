@@ -84,7 +84,7 @@ type NoMatch struct {
 }
 
 func (e *NoMatch) Error() string {
-	return fmt.Sprintf("no match %q against %q", e.Name, e.Content)
+	return fmt.Sprintf("No match for %q", e.Name)
 }
 
 // Document is a collection of Patterns
