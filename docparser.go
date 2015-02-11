@@ -162,6 +162,7 @@ type PatternList struct {
 	ListRegex  *regexp.Regexp
 	SplitRegex *regexp.Regexp
 	ItemRegex  *regexp.Regexp
+	Optional   bool
 }
 
 // Search for a list of items in the content using all the regexes
@@ -179,7 +180,11 @@ type PatternList struct {
 //
 func (pl *PatternList) Search(content string) (Fields, error) {
 	if !pl.ListRegex.MatchString(content) {
-		return Fields{}, &NoMatch{pl.Name + " - list regex", content}
+		if pl.Optional {
+			return Fields{}, nil
+		} else {
+			return Fields{}, &NoMatch{pl.Name + " - list regex", content}
+		}
 	}
 
 	listName := pl.ListRegex.SubexpNames()[1]
