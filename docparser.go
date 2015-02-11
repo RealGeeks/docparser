@@ -162,6 +162,7 @@ type PatternList struct {
 	ListRegex  *regexp.Regexp
 	SplitRegex *regexp.Regexp
 	ItemRegex  *regexp.Regexp
+	CleanItem  func(f Fields) Fields
 	Optional   bool
 }
 
@@ -200,6 +201,9 @@ func (pl *PatternList) Search(content string) (Fields, error) {
 		fields, ok := regexGroups(pl.ItemRegex, itemText)
 		if !ok {
 			return Fields{}, &NoMatch{fmt.Sprintf("%s - item %d", pl.Name, i), itemText}
+		}
+		if pl.CleanItem != nil {
+			fields = pl.CleanItem(fields)
 		}
 		items = append(items, fields)
 	}
