@@ -37,6 +37,14 @@ func (f *Fields) Update(other Fields) {
 	}
 }
 
+func (f *Fields) Keys() []string {
+	keys := make([]string, 0, len(*f))
+	for k, _ := range (*f) {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 // GetString returns the string value associated with key
 //
 // Return empty string if key is not present or if key
