@@ -10,6 +10,7 @@ package docparser
 import (
 	"fmt"
 	"regexp"
+	"strings"
 )
 
 // Pattern extracts information from a text
@@ -39,7 +40,7 @@ func (f *Fields) Update(other Fields) {
 
 func (f *Fields) Keys() []string {
 	keys := make([]string, 0, len(*f))
-	for k, _ := range (*f) {
+	for k, _ := range *f {
 		keys = append(keys, k)
 	}
 	return keys
@@ -114,6 +115,39 @@ func (d *Document) Search(content string) (Fields, error) {
 		f.Update(pf)
 	}
 	return f, nil
+}
+
+// Documents ia a colletion of Document
+type Documents []*Document
+
+// Search each Document for content and return the first successfull return
+// value
+//
+// Will try all documents, if all failed return an ErrorList with all errors
+func (ds *Documents) Search(content string) (Fields, error) {
+	errList := &ErrorList{}
+	for i, doc := range *ds {
+		fields, err := doc.Search(content)
+		if err == nil {
+			return fields, nil
+		}
+		errList.Add(fmt.Errorf("Document %d: %s", i, err.Error()))
+	}
+	return Fields{}, errList
+}
+
+type ErrorList []error
+
+func (el *ErrorList) Add(err error) {
+	(*el) = append((*el), err)
+}
+
+func (el *ErrorList) Error() string {
+	s := make([]string, 0, len(*el))
+	for _, err := range *el {
+		s = append(s, err.Error())
+	}
+	return strings.Join(s, "; ")
 }
 
 //

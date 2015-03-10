@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"testing"
 
 	"github.com/RealGeeks/docparser"
 )
@@ -142,5 +143,69 @@ Properties:
 	// (123) 221-1122
 	// #2211: 331 Kailua Rd, HI
 	// #9090: 990 Kaelepulu Dr, HI
+}
 
+var testDocuments = docparser.Documents{
+	&docparser.Document{
+		&docparser.PatternGroup{
+			Name:  "Name",
+			Regex: regexp.MustCompile(`Name: (?P<name>.*)\n`),
+		},
+		&docparser.PatternGroup{
+			Name:  "Email",
+			Regex: regexp.MustCompile(`Email: (?P<email>.*)\n`),
+		},
+	},
+	&docparser.Document{
+		&docparser.PatternGroup{
+			Name:  "Name",
+			Regex: regexp.MustCompile(`My Name: (?P<name>.*)\n`),
+		},
+		&docparser.PatternGroup{
+			Name:  "Email",
+			Regex: regexp.MustCompile(`My Email: (?P<email>.*)\n`),
+		},
+	},
+}
+
+func TestDocuments(t *testing.T) {
+	var tests = []struct {
+		text        string // input
+		name, email string // fields
+	}{
+		{
+			text: "Name: bob\nEmail: bob@site.com\n",
+			name: "bob", email: "bob@site.com",
+		},
+		{
+			text: "My Name: josh\nEmail: josh@site.com\n",
+			name: "josh", email: "josh@site.com",
+		},
+	}
+	for _, tt := range tests {
+		fields, err := testDocuments.Search(tt.text)
+		if err != nil {
+			t.Errorf("text %q failed: %q", tt.text, err)
+			continue
+		}
+		if name := fields.GetString("name"); name != tt.name {
+			t.Errorf("text %q want name %q got %q", tt.text, tt.name, name)
+			continue
+		}
+		if email := fields.GetString("email"); email != tt.email {
+			t.Errorf("text %q want email %q got %q", tt.text, tt.email, email)
+			continue
+		}
+	}
+}
+
+func TestDocumentsNoMatch(t *testing.T) {
+	_, err := testDocuments.Search("won't match")
+
+	if err == nil {
+		t.Fatal("did not return error")
+	}
+	if err.Error() != `Document 0: No match for "Name"; Document 1: No match for "Name"` {
+		t.Errorf("invalid error: %s", err)
+	}
 }
