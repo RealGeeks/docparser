@@ -21,6 +21,14 @@ type Pattern interface {
 	Search(content string) (Fields, error)
 }
 
+// PatternWithFields is the same as a Pattern but when used within a Document
+// will request access to the fields collected so far
+type PatternWithFields interface {
+	Pattern
+	SetFields(f Fields)
+	GetFields() Fields
+}
+
 // Fields is the return value of Pattern.Search()
 //
 // Values could be plain strings or a list of subfields ([]map[string]string)
@@ -108,6 +116,9 @@ type Document []Pattern
 func (d *Document) Search(content string) (Fields, error) {
 	f := Fields{}
 	for _, p := range *d {
+		if withFields, ok := p.(PatternWithFields); ok {
+			withFields.SetFields(f)
+		}
 		pf, err := p.Search(content)
 		if err != nil {
 			return Fields{}, err
@@ -196,6 +207,44 @@ func (pg *PatternGroup) Search(content string) (Fields, error) {
 	}
 	return fields, nil
 }
+
+// TemplatePatternGroup is a Pattern exactly like PatternGroup but instead of
+// providing a regex you can provide a template to a regex with with variables
+// like {contact_name} that will be replaced with fields found up to this point
+// with other Patterns
+//
+// Everything else is the same as PatternGroup
+//
+// Note that Search() can now fail if the regex fails to compile
+type TemplatePatternGroup struct {
+	Name          string
+	RegexTemplate string
+	Clean         func(f Fields) Fields
+	Optional      bool
+
+	fields Fields
+}
+
+func (pg *TemplatePatternGroup) Search(content string) (Fields, error) {
+	reg := pg.RegexTemplate
+	for _, key := range pg.fields.Keys() {
+		reg = strings.Replace(reg, "{"+key+"}", pg.fields.GetString(key), -1)
+	}
+	regex, err := regexp.Compile(reg)
+	if err != nil {
+		return Fields{}, fmt.Errorf("failed to compile regex for %s: %s (%v)", pg.Name, reg, err)
+	}
+	p := &PatternGroup{
+		Name:     pg.Name,
+		Regex:    regex,
+		Clean:    pg.Clean,
+		Optional: pg.Optional,
+	}
+	return p.Search(content)
+}
+
+func (pg *TemplatePatternGroup) SetFields(f Fields) { pg.fields = f }
+func (pg *TemplatePatternGroup) GetFields() Fields  { return pg.fields }
 
 // PatternList is a Pattern implementation that finds a list of items
 // in the content

@@ -161,9 +161,9 @@ var testDocuments = docparser.Documents{
 			Name:  "Name",
 			Regex: regexp.MustCompile(`My Name: (?P<name>.*)\n`),
 		},
-		&docparser.PatternGroup{
-			Name:  "Email",
-			Regex: regexp.MustCompile(`My Email: (?P<email>.*)\n`),
+		&docparser.TemplatePatternGroup{
+			Name:          "Email",
+			RegexTemplate: `My name and email {name}(?P<email>.*)\n`,
 		},
 	},
 }
@@ -178,7 +178,7 @@ func TestDocuments(t *testing.T) {
 			name: "bob", email: "bob@site.com",
 		},
 		{
-			text: "My Name: josh\nEmail: josh@site.com\n",
+			text: "My Name: josh\nMy name and email joshjosh@site.com\n",
 			name: "josh", email: "josh@site.com",
 		},
 	}
