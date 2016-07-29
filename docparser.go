@@ -225,11 +225,10 @@ type TemplatePatternGroup struct {
 	fields Fields
 }
 
+var templateVarRe = regexp.MustCompile("{.*}")
+
 func (pg *TemplatePatternGroup) Search(content string) (Fields, error) {
-	reg := pg.RegexTemplate
-	for _, key := range pg.fields.Keys() {
-		reg = strings.Replace(reg, "{"+key+"}", pg.fields.GetString(key), -1)
-	}
+	reg := pg.renderTemplate()
 	regex, err := regexp.Compile(reg)
 	if err != nil {
 		return Fields{}, fmt.Errorf("failed to compile regex for %s: %s (%v)", pg.Name, reg, err)
@@ -241,6 +240,17 @@ func (pg *TemplatePatternGroup) Search(content string) (Fields, error) {
 		Optional: pg.Optional,
 	}
 	return p.Search(content)
+}
+
+func (pg *TemplatePatternGroup) renderTemplate() string {
+	reg := pg.RegexTemplate
+	// for all fields we already have try to replace variables
+	for _, key := range pg.fields.Keys() {
+		reg = strings.Replace(reg, "{"+key+"}", pg.fields.GetString(key), -1)
+	}
+	// if we still have variables in the template then we have no
+	// fields to replace them, just replace with empty string
+	return templateVarRe.ReplaceAllString(reg, "")
 }
 
 func (pg *TemplatePatternGroup) SetFields(f Fields) { pg.fields = f }
